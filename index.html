@@ -10,7 +10,7 @@
 <body>
   <div class="navbar">
     <div class="container">
-      <button type="button" class="btn btn-default navbar-btn">Assemble</button>
+      <button type="button" class="btn btn-default navbar-btn" id="btn-assemble">Assemble</button>
     </div>
   </div>
   <div class="container">
@@ -18,7 +18,7 @@
       <div class="col-md-6">
         <div class="panel panel-default">
           <div class="panel-heading">
-            <h4 class="panel-title">Code</h4>
+            <h4 class="panel-title">Code <small>(x86, Intel syntax)</small></h4>
           </div>
           <div class="panel-body">
             <textarea rows="20" id="source-code" class="code-textarea">
@@ -50,5 +50,8 @@ start:
       </div>
     </div>
   </div>
+  <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+  <script src="pasm/pasm.min.js"></script>
+  <script src="include/main.js"></script>
 </body>
 </html>
