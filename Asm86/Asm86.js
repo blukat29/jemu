@@ -1028,9 +1028,8 @@ function Asm86Emulator(memory, inputFunction, outputFunction) {
 		Object.freeze(this);
 	}
 	ObserverSet.prototype = {
-		attach: function (targetFunction, target) {
+		attach: function (targetFunction) {
 			this._observers.push(targetFunction);
-			this._observers.push(isEmpty(target) ? null : target);
 			return true;
 		},
 		detach: function (target) {

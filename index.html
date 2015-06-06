@@ -25,11 +25,22 @@
           <div class="panel-body">
             <textarea rows="20" id="source-code" class="code-textarea">
 start:
+    push ebp
+    mov ebp, esp
+    push 2
     push 1
-    pop ecx
-    mov eax, 2
-    mov ebx, 3
+    call sum
+    hlt
+
+sum:
+    push ebp
+    mov ebp, esp
+    mov eax, [ebp+0x8]
+    mov ebx, [ebp+0xc]
     add eax, ebx
+    mov esp, ebp
+    pop ebp
+    ret
             </textarea>
           </div>
         </div>
@@ -69,7 +80,8 @@ start:
             <h4 class="panel-title">Memory</h4>
           </div>
           <div class="panel-body">
-            Memory contents are shown here.
+            <div id="mem-stack">
+            </div>
           </div>
         </div>
       </div>

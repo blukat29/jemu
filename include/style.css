@@ -7,3 +7,23 @@
   table-layout: fixed;
   margin-bottom: 0;
 }
+.mem-head {
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: small;
+  display: inline-block;
+  border-top: transparent solid;
+  border-bottom: transparent solid;
+  width: 20%;
+}
+.mem-cell {
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: small;
+  text-align: center;
+  display: inline-block;
+  width: 5%;
+}
+.mem-esp { background-color: #66FF66; }
+.mem-ebp { background-color: #FF9999; }
+.mem-esp.mem-ebp { background-color: #66FF66; border-top: #FF9999 solid; border-bottom: #FF9999 solid; }
+.mem-frame { background-color: #AAAADD; }
+
