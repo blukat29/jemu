@@ -11,6 +11,8 @@
   <div class="navbar">
     <div class="container">
       <button type="button" class="btn btn-default navbar-btn" id="btn-assemble">Assemble</button>
+      <button type="button" class="btn btn-default navbar-btn" id="btn-reset">Reset</button>
+      <button type="button" class="btn btn-default navbar-btn" id="btn-step">Step</button>
     </div>
   </div>
   <div class="container">
@@ -36,7 +38,28 @@ start:
             <h4 class="panel-title">Registers</h4>
           </div>
           <div class="panel-body">
-            Registers go here.
+            <table class="table table-condensed">
+              <thead>
+                <tr><th>eax</th><th>ebx</th><th>ecx</th><th>edx</th></tr>
+              </thead>
+              <tbody>
+                <tr><td id="reg-eax">.</td><td id="reg-ebx">.</td>
+                    <td id="reg-ecx">.</td><td id="reg-edx">.</td></tr>
+              </tbody>
+              <thead>
+                <tr><th>esi</th><th>edi</th><th>esp</th><th>ebp</th></tr>
+              </thead>
+              <tbody>
+                <tr><td id="reg-esi">.</td><td id="reg-edi">.</td>
+                    <td id="reg-esp">.</td><td id="reg-ebp">.</td></tr>
+              </tbody>
+              <thead>
+                <tr><th>eip</th><th>Flags</th></tr>
+              </thead>
+              <tbody>
+                <tr><td id="reg-eip">.</td><td id="reg-flags">.</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
         <div class="panel panel-default">
@@ -52,6 +75,8 @@ start:
   </div>
   <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
   <script src="pasm/pasm.min.js"></script>
+  <script src="Asm86/Asm86.js"></script>
+  <script src="Asm86/Asm86Language.js"></script>
   <script src="include/main.js"></script>
 </body>
 </html>

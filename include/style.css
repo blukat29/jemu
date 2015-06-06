@@ -1,4 +1,9 @@
 .code-textarea {
   width: 100%;
+  max-width: 100%;
   font-family: "Lucida Console", Monaco, monospace;
+}
+.table {
+  table-layout: fixed;
+  margin-bottom: 0;
 }
