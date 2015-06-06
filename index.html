@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Jemu</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="include/style.css"/>
+</head>
+<body>
+  <div class="navbar">
+    <div class="container">
+      <button type="button" class="btn btn-default navbar-btn">Assemble</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h4 class="panel-title">Code</h4>
+          </div>
+          <div class="panel-body">
+            <textarea rows="20" id="source-code" class="code-textarea">
+start:
+    mov eax, 2
+    mov ebx, 3
+    add eax, ebx
+            </textarea>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h4 class="panel-title">Registers</h4>
+          </div>
+          <div class="panel-body">
+            Registers go here.
+          </div>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h4 class="panel-title">Memory</h4>
+          </div>
+          <div class="panel-body">
+            Memory contents are shown here.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
