@@ -68,7 +68,8 @@ $(document).ready(function() {
   window.Opcode.error = assemble_error;
   pasm.parseError = assemble_error;
 
-  emulator = new Asm86Emulator(16 * 1024);
+  var memory = new VirtualMemory();
+  emulator = new Asm86Emulator(memory);
 
   $("#btn-assemble").click(assemble_code);
   $("#btn-reset").click(reset_emulator);

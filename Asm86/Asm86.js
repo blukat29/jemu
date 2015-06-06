@@ -73,15 +73,10 @@
 // Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume Volume 3C: System Programming Guide, Part 3 (June 2013)
 // http://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-software-developer-vol-3c-part-3-manual.html
 //
-function Asm86EmulatorContext(errorNotificationFunction, memorySize, inputFunction, outputFunction) {
+function Asm86EmulatorContext(errorNotificationFunction, memory, inputFunction, outputFunction) {
 	var regBuffer;
-	if (!memorySize || memorySize < 1)
-		throw "Invalid memory size!";
-	this.memorySize = (memorySize | 0);
-	if ((this.memorySize & (this.memorySize - 1)))
-		throw "Memory size must be a power of 2!";
-	this.memoryLimit = this.memorySize + 1024;
-	this.memory = new DataView(new ArrayBuffer(this.memorySize));
+	this.memory = memory;
+	this.entryPoint = this.memory.codeBase;
 	this.ioArray = new DataView(new ArrayBuffer(4));
 	this.inp = inputFunction;
 	this.outp = outputFunction;
@@ -130,14 +125,11 @@ function Asm86EmulatorContext(errorNotificationFunction, memorySize, inputFuncti
 	this.uint32Tmp = new Uint32Array(1);
 	this.tmp4Byte = new DataView(new ArrayBuffer(4));
 	this.currentInstruction = null;
-	this.nextInstruction = this.memoryLimit;
+	this.nextInstruction = this.entryPoint;
 	this.errorOccurred = false;
 	this.instructions = [];
-	this.instructionIndexFromAddress = function (address) {
-		return (address - this.memoryLimit) >>> 2;
-	};
 	this.validateNextInstructionIndex = function () {
-		var idx = (this.nextInstruction - this.memoryLimit) >>> 2;
+		var idx = (this.nextInstruction - this.entryPoint) >>> 2;
 		if (idx < 0 || idx >= this.instructions.length) {
 			this.errorOccurred = true;
 			errorNotificationFunction(Asm86Emulator.prototype.MESSAGES.INVALID_INSTRUCTION_ADDRESS + Asm86Emulator.prototype._hex(this.nextInstruction));
@@ -170,14 +162,14 @@ function Asm86EmulatorContext(errorNotificationFunction, memorySize, inputFuncti
 			if (stepping) return true;
 		}
 		if (this.validateNextInstructionIndex()) {
-			instr = this.instructions[(this.nextInstruction - this.memoryLimit) >>> 2];
+			instr = this.instructions[(this.nextInstruction - this.entryPoint) >>> 2];
 			this.nextInstruction += 4;
 			this.currentInstruction = instr;
 			if (instr.operator.isPrefix) {
 				if (instr.operator.exec(this)) {
 					//it is ok to run the next instruction
 					if (this.validateNextInstructionIndex()) {
-						instr = this.instructions[(this.nextInstruction - this.memoryLimit) >>> 2];
+						instr = this.instructions[(this.nextInstruction - this.entryPoint) >>> 2];
 						instr.operator.exec(this, instr.op1, instr.op2);
 					}
 					this.nextInstruction = old; //go back to the "rep" prefix
@@ -197,8 +189,8 @@ function Asm86EmulatorContext(errorNotificationFunction, memorySize, inputFuncti
 		return false;
 	};
 	this.resetExecution = function () {
-		this.nextInstruction = this.memoryLimit;
-		this.regs.eip.set(this.memoryLimit);
+		this.nextInstruction = this.entryPoint;
+		this.regs.eip.set(this.entryPoint);
 		this.errorOccurred = false;
 		this.pendingIO = 0;
 		this.pendingIOreg = null;
@@ -210,20 +202,13 @@ function Asm86EmulatorContext(errorNotificationFunction, memorySize, inputFuncti
 		return true;
 	};
 	this.resetMemory = function () {
-		var i, mem = this.memory;
-		if (this.memorySize >= 4) {
-			for (i = this.memorySize - 4; i >= 0; i -= 4)
-				mem.setUint32(i, 0);
-		} else {
-			for (i = this.memorySize - 1; i >= 0; i--)
-				mem.setUint8(i, 0);
-		}
+		this.memory.reset();
 		return true;
 	};
 	this.resetRegisters = function () {
 		for (var i = (8 - 1) << 2; i >= 0; i -= 4)
 			regBuffer.setUint32(i, 0);
-		this.regs.esp.set(this.memoryLimit);
+		this.regs.esp.set(this.memory.initialStackPointer);
 		this.flagCarry = 0;
 		this.flagDir = 0;
 		this.flagI = 0;
@@ -251,76 +236,21 @@ function Asm86EmulatorContext(errorNotificationFunction, memorySize, inputFuncti
 		return true;
 	};
 	this.getMem = function (address, size) {
-		if (address < 1024 || (address + size) > this.memoryLimit) {
+		var result = this.memory.get(address, size);
+		if (!result) {
 			this.errorOccurred = true;
 			errorNotificationFunction(Asm86Emulator.prototype.MESSAGES.INVALID_READ_ADDRESS + Asm86Emulator.prototype._hex(address));
 			return null;
 		}
-		switch (size) {
-			case 1:
-				return this.memory.getUint8(address - 1024);
-			case 2:
-				return this.memory.getUint16(address - 1024, true);
-			case 4:
-				return this.memory.getUint32(address - 1024, true);
-		}
-		this.errorOccurred = true;
-		errorNotificationFunction(Asm86Emulator.prototype.MESSAGES.INVALID_READ_SIZE + size.toString());
-		return null;
+		return result;
 	};
 	this.setMem = function (address, value, size) {
-		if (address < 1024 || (address + size) > this.memoryLimit) {
+		var result = this.memory.set(address, value, size);
+		if (!result) {
 			this.errorOccurred = true;
 			errorNotificationFunction(Asm86Emulator.prototype.MESSAGES.INVALID_WRITE_ADDRESS + Asm86Emulator.prototype._hex(address));
-			return false;
 		}
-		switch (size) {
-			case 1:
-				this.memory.setUint8(address - 1024, value);
-				return true;
-			case 2:
-				this.memory.setUint16(address - 1024, value, true);
-				return true;
-			case 4:
-				this.memory.setUint32(address - 1024, value, true);
-				return true;
-		}
-		this.errorOccurred = true;
-		errorNotificationFunction(Asm86Emulator.prototype.MESSAGES.INVALID_WRITE_SIZE + size.toString());
-		return false;
-	};
-	this.dbgGetByte = function (address) {
-		if (address >= 1024 && (address + 1) <= this.memoryLimit) return this.memory.getUint8(address - 1024);
-		return null;
-	};
-	this.dbgGetWord = function (address) {
-		if (address >= 1024 && (address + 2) <= this.memoryLimit) return this.memory.getUint16(address - 1024, true);
-		return null;
-	};
-	this.dbgGetDword = function (address) {
-		if (address >= 1024 && (address + 4) <= this.memoryLimit) return this.memory.getUint32(address - 1024, true);
-		return null;
-	};
-	this.dbgSetByte = function (address, value) {
-		if (address >= 1024 && (address + 1) <= this.memoryLimit) {
-			this.memory.setUint8(address - 1024, value);
-			return true;
-		}
-		return false;
-	};
-	this.dbgSetWord = function (address, value) {
-		if (address >= 1024 && (address + 2) <= this.memoryLimit) {
-			this.memory.setUint16(address - 1024, value, true);
-			return true;
-		}
-		return false;
-	};
-	this.dbgSetDword = function (address, value) {
-		if (address >= 1024 && (address + 4) <= this.memoryLimit) {
-			this.memory.setUint16(address - 1024, value, true);
-			return true;
-		}
-		return false;
+		return result;
 	};
 	Object.freeze(this.regs);
 	Object.seal(this);
@@ -833,7 +763,7 @@ Asm86Compiler.prototype = {
 		}
 		label = {
 			name: name,
-			instructionIndex: (parserContext.context.memoryLimit + (parserContext.context.instructions.length << 2))
+			instructionIndex: (parserContext.context.entryPoint + (parserContext.context.instructions.length << 2))
 		};
 		Object.freeze(label);
 		parserContext.labels[lName] = label;
@@ -1090,7 +1020,7 @@ Asm86Compiler.prototype = {
 Object.freeze(Asm86Compiler.prototype);
 //inputFunction = function(address, ioArray, size) return true if operation succeeded, or false indicate that the operation is still pending
 //outputFunction = function(address, ioArray, size) return true if operation succeeded, or false indicate that the operation is still pending
-function Asm86Emulator(memorySize, inputFunction, outputFunction) {
+function Asm86Emulator(memory, inputFunction, outputFunction) {
 	if (!Date.now) Date.now = function () { return (+new Date()); };
 	var emulator = this, vars = {}, continueOnResumption = false, running = false, compiled = false, stepPending = false, portMem = new DataView(new ArrayBuffer(16)), execTimeout = null, lastTimeout = null, lastTimeout2 = null, lastTimeout3 = null, lastTimeout4 = null;
 	function ObserverSet() {
@@ -1241,14 +1171,14 @@ function Asm86Emulator(memorySize, inputFunction, outputFunction) {
 			if (address <= 255 && end > 255) {
 				if (ioArray.getUint8(255 - address)) {
 					this.reset();
-					//this.context.nextInstruction = this.context.memoryLimit;
+					//this.context.nextInstruction = this.context.entryPoint;
 					//running = false;
 				}
 			}
 		}
 		return true;
 	};
-	this.context = Asm86Emulator.prototype._createContext(this, memorySize, inputFunction || this.defaultInput, outputFunction || this.defaultOutput);
+	this.context = Asm86Emulator.prototype._createContext(this, memory, inputFunction || this.defaultInput, outputFunction || this.defaultOutput);
 	this.onCompilationFinished = new ObserverSet(); //emulator, errorOccurred
 	this.onCompilationError = new ObserverSet(); //emulator, message, line, lineIndex, index (line, lineIndex and index are 0 based)
 	this.onReset = new ObserverSet(); //emulator
@@ -1265,7 +1195,6 @@ function Asm86Emulator(memorySize, inputFunction, outputFunction) {
 	this.isRunningOrWaiting = function () { return (running || this.context.halted || !!this.context.pendingIO); }
 	this.isCompiled = function () { return compiled; };
 	this.willContinueAfterResumption = function () { return continueOnResumption; };
-	this.memorySize = this.context.memorySize;
 	this.registers = this.context.regs;
 	this.getFlagCarry = function () { return this.context.flagCarry; }
 	this.getFlagDir = function () { return this.context.flagDir; }
@@ -1273,11 +1202,6 @@ function Asm86Emulator(memorySize, inputFunction, outputFunction) {
 	this.getFlagOv = function () { return this.context.flagOv; }
 	this.getFlagSign = function () { return this.context.flagSign; }
 	this.getFlagZ = function () { return this.context.flagZ; }
-	this.getInstructionAtAddress = function (address) {
-		var idx = this.context.instructionIndexFromAddress(address);
-		if (idx < 0 || idx >= this.context.instructions.length) return null;
-		return this.context.instructions[idx];
-	};
 	this.numericString = Asm86Emulator.prototype._numeric;
 	this.hexString = Asm86Emulator.prototype._hex;
 	this.hexStringNoPrefix = Asm86Emulator.prototype._hexNoPrefix;
@@ -1605,8 +1529,8 @@ Asm86Emulator.prototype = {
 		s = "0" + x.toString(16).toUpperCase();
 		return s.substr(s.length - 2);
 	},
-	_createContext: function (emulator, memorySize, inputFunction, outputFunction) {
-		return new Asm86EmulatorContext(function (message) { return emulator.onRuntimeError.notify(emulator, message); }, memorySize, inputFunction, outputFunction);
+	_createContext: function (emulator, memory, inputFunction, outputFunction) {
+		return new Asm86EmulatorContext(function (message) { return emulator.onRuntimeError.notify(emulator, message); }, memory, inputFunction, outputFunction);
 	},
 	_createCompiler: function (emulator) {
 		return new Asm86Compiler(emulator.context, function (message, line, lineIndex, index) { return emulator.onCompilationError.notify(emulator, message, line, lineIndex, index); });

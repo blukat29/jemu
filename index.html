@@ -25,6 +25,8 @@
           <div class="panel-body">
             <textarea rows="20" id="source-code" class="code-textarea">
 start:
+    push 1
+    pop ecx
     mov eax, 2
     mov ebx, 3
     add eax, ebx
@@ -75,6 +77,7 @@ start:
   </div>
   <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
   <script src="pasm/pasm.min.js"></script>
+  <script src="include/vm.js"></script>
   <script src="Asm86/Asm86.js"></script>
   <script src="Asm86/Asm86Language.js"></script>
   <script src="include/main.js"></script>
