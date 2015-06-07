@@ -770,6 +770,7 @@ Asm86Compiler.prototype = {
 		return label;
 	},
 	_createMemoryAccess: function (ctx, size, reg, regScale, scale, imm) {
+		if (imm >= 0x80000000) imm = -(~imm + 1);
 		var m = {
 			get: function () { return ctx.getMem(this.getAddress(), this.size); },
 			set: function (x) { return ctx.setMem(this.getAddress(), x, this.size); },

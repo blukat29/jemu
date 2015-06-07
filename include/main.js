@@ -96,9 +96,38 @@ function assemble_code() {
   exe_text = result.data;
 }
 
-function reset_emulator() {
+function compile_code() {
   var code = get_source_code();
-  emulator.compile(code);
+
+  /* Dirty fix to accept negative displacement inside memory operand. */
+  /* Asm86Compiler (unfortunately) uses this grammar:
+   *     MemoryOperand: [ REG + REG * (2|4|8) + IMM ]
+   *     IMM: -123, 0x8888, 0b110011101 ...
+   * So we have to write like [ecx+-4] instead of [ecx-4] */
+  var i = 0;
+  var insideComment = false;
+  var bracketLevel = 0;
+  var revised_code = "";
+  for (var i=0; i < code.length; i++) {
+    var c = code.charAt(i);
+    if (c == '\n') insideComment = false;
+    else if (c == ';') {
+      insideComment = true;
+      bracketLevel = 0;
+    }
+    else if (c == '[') bracketLevel ++;
+    else if (c == ']') bracketLevel --;
+    else if (c == '-' && bracketLevel > 0 && !insideComment) {
+      c = '+-';
+    }
+    revised_code += c;
+  }
+
+  emulator.compile(revised_code);
+}
+
+function reset_emulator() {
+  compile_code();
   emulator.reset();
   update_registers();
   update_memory();

@@ -30,7 +30,6 @@ function VirtualMemory() {
 
   this.set = function(address, value, size) {
     var physicalAddr = this._translateAddress(address, size);
-    console.log("write " + address.toString(16) + " phys " + physicalAddr.toString(16));
     if (physicalAddr) {
       switch (size) {
         case 1:
