@@ -1,0 +1,45 @@
+.title-inline {
+  display: inline-block;
+}
+.CodeMirror {
+  height: 100%;
+}
+.code-display {
+  font-size: small;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+.text-address {
+  width: 5.5em;
+}
+.text-address-gutter {
+  padding-left: 0.5em;
+  font-size: 0.8em;
+}
+.current-instruction {
+  background-color: cyan;
+}
+.mem-head {
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: 0.8em;
+  display: inline-block;
+  padding-right: 10px;
+}
+.mem-cell {
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: 0.8em;
+  display: inline-block;
+  padding-right: 10px;
+}
+.mem-ptr {
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: 0.8em;
+  display: inline-block;
+}
+.mem-table.table-condensed > tbody > tr > td {
+  border: none;
+}
+#reg-esp { background-color: #66FF66; }
+#reg-ebp { background-color: #FF9999; }
+#ptr-esp { background-color: #66FF66; }
+#ptr-ebp { background-color: #FF9999; }
+
