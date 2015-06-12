@@ -1,6 +1,7 @@
 
 "use strict";
 
+var editor;
 var source_code;
 var exe_text;
 var memory;
@@ -22,7 +23,7 @@ function byte_to_hexstr(n) {
 }
 
 function get_source_code() {
-  source_code = $("#source-code").val();
+  source_code = editor.getValue('\n');
   return source_code;
 }
 
@@ -166,6 +167,10 @@ function set_emulator_callbacks() {
 }
 
 $(document).ready(function() {
+
+  editor = CodeMirror.fromTextArea($("#source-code")[0], {
+    lineNumbers: true
+  });
 
   window.Opcode.error = assemble_error;
   pasm.parseError = assemble_error;
