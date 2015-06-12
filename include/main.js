@@ -9,6 +9,7 @@ var exe_text_end;
 var memory;
 var emulator;
 var regs = {};
+var run_id;
 
 var esp_pointer = '<span id="ptr-esp">esp</span>';
 var ebp_pointer = ' <span id="ptr-ebp">ebp</span>';
@@ -109,7 +110,7 @@ function assemble_error(msg, line) {
   console.log('Assemble error: ' + msg + ' in line ' + line);
 }
 
-function assemble_code() {
+function run_pasm() {
   var code = get_source_code();
 
   /* Tell Pasm about architecture. */
@@ -176,15 +177,55 @@ function compile_code() {
   emulator.compile(revised_code);
 }
 
+function allow_edit_code() {
+  editor.setOption("readOnly", false);
+  $(".CodeMirror-code").css("background-color", "#ffffff");
+  $("#btn-assemble").removeClass("disabled");
+  $("#btn-reset").addClass("disabled");
+  $("#btn-step").addClass("disabled");
+  $("#btn-run").addClass("disabled");
+}
+
+function assemble_code() {
+  run_pasm();
+  editor.setOption("readOnly", true);
+  $(".CodeMirror-code").css("background-color", "#f5f5f5");
+  $("#btn-edit").removeClass("disabled")
+  $("#btn-assemble").removeClass("disabled");
+  $("#btn-reset").removeClass("disabled");
+  $("#btn-step").addClass("disabled");
+  $("#btn-run").addClass("disabled");
+}
+
 function reset_emulator() {
   compile_code();
   emulator.reset();
   update_context();
+  $("#btn-step").removeClass("disabled");
+  $("#btn-run").removeClass("disabled");
 }
 
 function step_emulator() {
   emulator.step();
   update_context();
+}
+
+function run_emulator() {
+  run_id = setInterval(step_emulator, 100);
+  $("#btn-assemble").addClass("disabled");
+  $("#btn-reset").addClass("disabled");
+  $("#btn-step").addClass("disabled");
+  $("#btn-run").addClass("disabled");
+  $("#btn-pause").removeClass("disabled");
+}
+
+function pause_emulator() {
+  clearInterval(run_id);
+  $("#btn-assemble").removeClass("disabled");
+  $("#btn-reset").removeClass("disabled");
+  $("#btn-step").removeClass("disabled");
+  $("#btn-run").removeClass("disabled");
+  $("#btn-pause").addClass("disabled");
 }
 
 function set_emulator_callbacks() {
@@ -217,9 +258,12 @@ $(document).ready(function() {
   emulator = new Asm86Emulator(memory);
   set_emulator_callbacks();
 
+  $("#btn-edit").click(allow_edit_code);
   $("#btn-assemble").click(assemble_code);
   $("#btn-reset").click(reset_emulator);
   $("#btn-step").click(step_emulator);
+  $("#btn-run").click(run_emulator);
+  $("#btn-pause").click(pause_emulator);
   $("#btn-example").click(load_example);
 });
 

@@ -11,9 +11,26 @@
 <body>
   <div class="navbar">
     <div class="container">
-      <button type="button" class="btn btn-default navbar-btn" id="btn-assemble">Assemble</button>
-      <button type="button" class="btn btn-default navbar-btn" id="btn-reset">Reset</button>
-      <button type="button" class="btn btn-default navbar-btn" id="btn-step">Step</button>
+      <button type="button" class="btn btn-default navbar-btn disabled" id="btn-edit">
+        <span class="glyphicon glyphicon-pencil"></span> Edit code
+      </button>
+      <button type="button" class="btn btn-default navbar-btn" id="btn-assemble">
+        <span class="glyphicon glyphicon-save"></span> Assemble
+      </button>
+      <button type="button" class="btn btn-default navbar-btn disabled" id="btn-reset">
+        <span class="glyphicon glyphicon-refresh"></span> Reset
+      </button>
+      <div class="btn-group">
+        <button type="button" class="btn btn-default navbar-btn disabled" id="btn-step">
+          <span class="glyphicon glyphicon-play"></span> Step
+        </button>
+        <button type="button" class="btn btn-default navbar-btn disabled" id="btn-run">
+          <span class="glyphicon glyphicon-forward"></span> Run
+        </button>
+        <button type="button" class="btn btn-default navbar-btn disabled" id="btn-pause">
+          <span class="glyphicon glyphicon-pause"></span> Pause
+        </button>
+      </div>
     </div>
   </div>
   <div class="container">
