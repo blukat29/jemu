@@ -6,6 +6,9 @@ var memory;
 var emulator;
 var regs = {};
 
+var esp_pointer = '<span id="ptr-esp">esp</span>';
+var ebp_pointer = ' <span id="ptr-ebp">ebp</span>';
+
 function int_to_hexstr(n) {
   var pad = "00000000";
   return "0x" + (pad + n.toString(16)).slice(-8);
@@ -38,41 +41,36 @@ function update_registers() {
   $("#reg-flags").html(flag_output);
 }
 
-function highlight_memory_cell(addr) {
+function memory_pointer(addr) {
   var result = "";
   var sp = regs.esp.get();
   var bp = regs.ebp.get();
-  if (sp <= addr && addr < sp + 4) result += " mem-esp";
-  if (bp <= addr && addr < bp + 4) result += " mem-ebp";
-  if (sp + 4 <= addr && addr < bp) result += " mem-frame";
+  if (sp <= addr && addr < sp + 4) result += esp_pointer;
+  if (bp <= addr && addr < bp + 4) result += ebp_pointer;
+  if (sp + 4 <= addr && addr < bp)
+    return null;
   return result;
 }
 
-function show_segment(segment, name) {
-  var base = segment.base;
-  var limit = base + segment.size;
-  var data = segment.data;
-  var e = $("#mem-" + name);
-  var dataIdx = 0;
+function show_stack() {
+  var base = 0xc0000000 - 0x80;
+  var limit = 0xc0000000;
+  var e = $("#mem-stack");
   e.html("");
-  for (var addr = base; addr < limit; addr += 16) {
+  for (var addr = limit - 4; addr >= base; addr -= 4) {
+    var value = memory.get(addr, 4);
     var head = $('<div class="mem-head"></div>').html(int_to_hexstr(addr));
-    e.append(head);
-    for (var i=0; i<16; i++) {
-      var value = data[dataIdx];
-      var cell = $('<div class="mem-cell"></div>').html(byte_to_hexstr(value));
-      var hlClass = highlight_memory_cell(base + dataIdx);
-      if (hlClass)
-        cell.addClass(hlClass);
-      e.append(cell);
-      dataIdx++;
-    }
+    var cell = $('<div class="mem-cell"></div>').html(int_to_hexstr(value));
+    var ptr = $('<div class="mem-ptr"></div>').html(memory_pointer(addr) || "&nbsp;");
+    var tr = $('<div></div>');
+    tr.append(head).append(cell).append(ptr);
+    e.append(tr);
   }
 }
 
-function update_memory() {
-  var dump = memory.dump();
-  show_segment(dump.STACK, "stack");
+function update_context() {
+  update_registers();
+  show_stack();
 }
 
 function assemble_error(msg, line) {
@@ -129,14 +127,12 @@ function compile_code() {
 function reset_emulator() {
   compile_code();
   emulator.reset();
-  update_registers();
-  update_memory();
+  update_context();
 }
 
 function step_emulator() {
   emulator.step();
-  update_registers();
-  update_memory();
+  update_context();
 }
 
 function set_emulator_callbacks() {

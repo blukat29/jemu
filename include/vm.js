@@ -20,7 +20,7 @@ function VirtualMemory() {
       var base = this.sections[i].base;
       var sector_size = this.sections[i].size;
       var limit = base + sector_size;
-      if (base <= address && address + size < limit) {
+      if (base <= address && address + size <= limit) {
         return (address - base + ramOffset);
       }
       ramOffset += sector_size;
@@ -65,24 +65,6 @@ function VirtualMemory() {
     for (var i=0; i<this.ramSize; i++) {
       this.ram.setUint8(i, 0);
     }
-  }
-
-  this.dump = function() {
-    var ramOffset = 0;
-    var capture = {};
-    for (var i=0; i<this.sections.length; i++) {
-      var base = this.sections[i].base;
-      var size = this.sections[i].size;
-      var name = this.sections[i].name;
-      var array = new Uint8Array(this.ram.buffer, ramOffset, size);
-      capture[name] = {
-        base: base,
-        size: size,
-        data: array
-      };
-      ramOffset += size;
-    }
-    return capture;
   }
 }
 

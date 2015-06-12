@@ -3,27 +3,35 @@
   max-width: 100%;
   font-family: "Lucida Console", Monaco, monospace;
 }
+.code-display {
+  font-size: small;
+  font-family: "Lucida Console", Monaco, monospace;
+}
 .table {
-  table-layout: fixed;
   margin-bottom: 0;
 }
 .mem-head {
   font-family: "Lucida Console", Monaco, monospace;
-  font-size: small;
+  font-size: 0.8em;
   display: inline-block;
-  border-top: transparent solid;
-  border-bottom: transparent solid;
-  width: 20%;
+  padding-right: 10px;
 }
 .mem-cell {
   font-family: "Lucida Console", Monaco, monospace;
-  font-size: small;
-  text-align: center;
+  font-size: 0.8em;
   display: inline-block;
-  width: 5%;
+  padding-right: 10px;
 }
-.mem-esp { background-color: #66FF66; }
-.mem-ebp { background-color: #FF9999; }
-.mem-esp.mem-ebp { background-color: #66FF66; border-top: #FF9999 solid; border-bottom: #FF9999 solid; }
-.mem-frame { background-color: #AAAADD; }
+.mem-ptr {
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: 0.8em;
+  display: inline-block;
+}
+.mem-table.table-condensed > tbody > tr > td {
+  border: none;
+}
+#reg-esp { background-color: #66FF66; }
+#reg-ebp { background-color: #FF9999; }
+#ptr-esp { background-color: #66FF66; }
+#ptr-ebp { background-color: #FF9999; }
 
