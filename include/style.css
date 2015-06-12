@@ -1,3 +1,6 @@
+.title-inline {
+  display: inline-block;
+}
 .CodeMirror {
   height: 100%;
 }
@@ -15,7 +18,6 @@
 .current-instruction {
   background-color: cyan;
 }
-
 .mem-head {
   font-family: "Lucida Console", Monaco, monospace;
   font-size: 0.8em;

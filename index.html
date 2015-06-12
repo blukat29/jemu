@@ -21,7 +21,16 @@
       <div class="col-md-6">
         <div class="panel panel-default">
           <div class="panel-heading">
-            <h4 class="panel-title">Code <small>(x86, Intel syntax)</small></h4>
+            <h4 class="panel-title title-inline">Code <small>(x86, Intel syntax)</small></h4>
+            <div style="float:right" class="title-inline">
+              Examples:
+              <select id="select-example">
+                <option value="">select..</option>
+                <option value="sum.asm">Function call</option>
+                <option value="fibo.asm">Recursion</option>
+              </select>
+              <button id="btn-example">Load</button>
+            </div>
           </div>
           <div class="panel-body">
             <textarea rows="20" id="source-code" class="code-textarea">

@@ -193,6 +193,16 @@ function set_emulator_callbacks() {
   });
 }
 
+function load_example() {
+  var filename = $("#select-example").val();
+  if (filename == "") return;
+  $.ajax({
+    url: "example/" + filename,
+  }).done(function(data) {
+    editor.setValue(data);
+  });
+}
+
 $(document).ready(function() {
 
   editor = CodeMirror.fromTextArea($("#source-code")[0], {
@@ -210,5 +220,6 @@ $(document).ready(function() {
   $("#btn-assemble").click(assemble_code);
   $("#btn-reset").click(reset_emulator);
   $("#btn-step").click(step_emulator);
+  $("#btn-example").click(load_example);
 });
 
