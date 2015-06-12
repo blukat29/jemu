@@ -1,6 +1,7 @@
 
 "use strict";
 
+var source_code;
 var exe_text;
 var memory;
 var emulator;
@@ -21,16 +22,24 @@ function byte_to_hexstr(n) {
 }
 
 function get_source_code() {
-  return $("#source-code").val();
+  source_code = $("#source-code").val();
+  return source_code;
 }
 
 function update_registers() {
   regs = emulator.registers;
-  var names = ["eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp", "eip"];
+  /* Display general purpose registers */
+  var names = ["eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp"];
   for (var i=0; i<names.length; i++) {
     var name = names[i];
     $("#reg-" + name).html(int_to_hexstr(regs[name].get()));
   }
+
+  /* Display real EIP */
+  var real_eip = exe_text[(regs.eip.get() - 0x8048000) >> 2].addr;
+  $("#reg-eip").html(int_to_hexstr(real_eip));
+
+  /* Display EFLAGS */
   var flags = [["flagCarry","C"], ["flagZ","Z"], ["flagSign", "S"], ["flagOv", "O"]];
   var flag_output = "";
   for (var i=0; i<flags.length; i++) {
@@ -81,7 +90,7 @@ function assemble_code() {
   var code = get_source_code();
 
   /* Tell Pasm about architecture. */
-  code = "[bits 32]\n" + code;
+  code = "[bits 32]\n[org 0x8048000]\n" + code;
 
   /* NASM syntax does not have "ptr" after size specifier. */
   code = code.replace("byte ptr", "byte")
@@ -90,8 +99,23 @@ function assemble_code() {
              .replace("qword ptr", "qword");
 
   var result = pasm.parse(code);
-  console.log(result);
-  exe_text = result.data;
+
+  var addr = 0x8048000;
+  exe_text = [];
+  for (var i in result.lines) {
+    var bytes = [];
+    var str = result.lines[i].final;
+    while (str.length > 0) {
+      bytes.push(parseInt(str.substring(0,2), 16));
+      str = str.substring(2);
+    }
+    var instr = {
+      bytes: bytes,
+      addr: addr
+    };
+    addr += bytes.length;
+    exe_text.push(instr);  // Two lines for [bits 32] and [org 0x8048000].
+  }
 }
 
 function compile_code() {
