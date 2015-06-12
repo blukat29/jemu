@@ -1,9 +1,11 @@
 
 "use strict";
 
+var last_instruction = null;
 var editor;
 var source_code;
 var exe_text;
+var exe_text_end;
 var memory;
 var emulator;
 var regs = {};
@@ -37,7 +39,7 @@ function update_registers() {
   }
 
   /* Display real EIP */
-  var real_eip = exe_text[(regs.eip.get() - 0x8048000) >> 2].addr;
+  var real_eip = get_instruction_at(regs.eip.get()).addr;
   $("#reg-eip").html(int_to_hexstr(real_eip));
 
   /* Display EFLAGS */
@@ -62,6 +64,14 @@ function memory_pointer(addr) {
   return result;
 }
 
+function get_instruction_at(addr) {
+  if (0x8048000 <= addr && addr < exe_text_end) {
+    var index = (addr - 0x8048000) / 4;
+    return exe_text[index];
+  }
+  return null;
+}
+
 function show_stack() {
   var base = 0xc0000000 - 0x80;
   var limit = 0xc0000000;
@@ -69,6 +79,9 @@ function show_stack() {
   e.html("");
   for (var addr = limit - 4; addr >= base; addr -= 4) {
     var value = memory.get(addr, 4);
+    var instr = get_instruction_at(value);
+    if (instr)
+      value = instr.addr;
     var head = $('<div class="mem-head"></div>').html(int_to_hexstr(addr));
     var cell = $('<div class="mem-cell"></div>').html(int_to_hexstr(value));
     var ptr = $('<div class="mem-ptr"></div>').html(memory_pointer(addr) || "&nbsp;");
@@ -78,9 +91,18 @@ function show_stack() {
   }
 }
 
+function mark_current_instruction() {
+  if (last_instruction != null)
+    editor.removeLineClass(last_instruction, "background", "current-instruction");
+  var index = get_instruction_at(regs.eip.get()).index;
+  last_instruction = index;
+  editor.addLineClass(index, "background", "current-instruction");
+}
+
 function update_context() {
   update_registers();
   show_stack();
+  mark_current_instruction();
 }
 
 function assemble_error(msg, line) {
@@ -112,11 +134,16 @@ function assemble_code() {
     }
     var instr = {
       bytes: bytes,
-      addr: addr
+      addr: addr,
+      index: i-2   // Two lines for [bits 32] and [org 0x8048000].
     };
+    exe_text.push(instr);
+    var gutter = $('<span class="text-address-gutter"></span>').html(int_to_hexstr(addr));
+    editor.setGutterMarker(i-2, "text-address", gutter[0]);
+
     addr += bytes.length;
-    exe_text.push(instr);  // Two lines for [bits 32] and [org 0x8048000].
   }
+  exe_text_end = addr + 4 * exe_text.length;
 }
 
 function compile_code() {
@@ -169,6 +196,7 @@ function set_emulator_callbacks() {
 $(document).ready(function() {
 
   editor = CodeMirror.fromTextArea($("#source-code")[0], {
+    gutters: ["CodeMirror-linenumbers", "text-address"],
     lineNumbers: true
   });
 
