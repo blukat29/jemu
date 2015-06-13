@@ -54,17 +54,6 @@ function update_registers() {
   $("#reg-flags").html(flag_output);
 }
 
-function memory_pointer(addr) {
-  var result = "";
-  var sp = regs.esp.get();
-  var bp = regs.ebp.get();
-  if (sp <= addr && addr < sp + 4) result += esp_pointer;
-  if (bp <= addr && addr < bp + 4) result += ebp_pointer;
-  if (sp + 4 <= addr && addr < bp)
-    return null;
-  return result;
-}
-
 function get_instruction_at(addr) {
   if (0x8048000 <= addr && addr < exe_text_end) {
     var index = (addr - 0x8048000) / 4;
@@ -77,17 +66,40 @@ function show_stack() {
   var base = 0xc0000000 - 0x80;
   var limit = 0xc0000000;
   var e = $("#mem-stack");
+  var sp = regs.esp.get();
+  var bp = regs.ebp.get();
   e.html("");
   for (var addr = limit - 4; addr >= base; addr -= 4) {
+
     var value = memory.get(addr, 4);
     var instr = get_instruction_at(value);
     if (instr)
       value = instr.addr;
-    var head = $('<div class="mem-head"></div>').html(int_to_hexstr(addr));
-    var cell = $('<div class="mem-cell"></div>').html(int_to_hexstr(value));
-    var ptr = $('<div class="mem-ptr"></div>').html(memory_pointer(addr) || "&nbsp;");
-    var tr = $('<div></div>');
-    tr.append(head).append(cell).append(ptr);
+
+    var head = $('<td class="mem-head"></td>').html(int_to_hexstr(addr));
+    var cell = $('<td class="mem-cell"></td>').html(int_to_hexstr(value));
+    if (sp <= addr && addr < bp + 4) {
+      head.addClass("mem-frame");
+      cell.addClass("mem-frame");
+    }
+
+    var sp_ptr = '<td></td>'
+    var bp_ptr = '<td></td>'
+    if (sp <= addr && addr < sp + 4)
+      sp_ptr = '<td class="mem-ptr ptr-esp">esp</td>';
+    else if (sp + 4 <= addr && addr <= bp)
+      sp_ptr = '<td class="mem-ptr ptr-esp-delta">esp+0x' + (addr - sp).toString(16) + '</td>';
+
+    if (bp <= addr && addr < bp + 4)
+      bp_ptr = '<td class="mem-ptr ptr-ebp">ebp</td>';
+    else if (sp <= addr && addr < bp)
+      bp_ptr = '<td class="mem-ptr ptr-ebp-delta">ebp-0x' + (bp - addr).toString(16) + '</td>';
+    else if (bp + 4 <= addr && addr < bp + 16)
+      bp_ptr = '<td class="mem-ptr ptr-ebp-delta">ebp+0x' + (addr - bp).toString(16) + '</td>';
+
+    var tr = $('<tr></tr>');
+    if (addr < sp) tr.addClass('text-muted');
+    tr.append(head).append(cell).append(sp_ptr).append(bp_ptr);
     e.append(tr);
   }
 }
@@ -184,6 +196,7 @@ function allow_edit_code() {
   $("#btn-reset").addClass("disabled");
   $("#btn-step").addClass("disabled");
   $("#btn-run").addClass("disabled");
+  $("#btn-pause").addClass("disabled");
 }
 
 function assemble_code() {
@@ -241,6 +254,8 @@ function load_example() {
     url: "example/" + filename,
   }).done(function(data) {
     editor.setValue(data);
+    pause_emulator();
+    allow_edit_code();
   });
 }
 

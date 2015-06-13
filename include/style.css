@@ -18,28 +18,24 @@
 .current-instruction {
   background-color: cyan;
 }
-.mem-head {
-  font-family: "Lucida Console", Monaco, monospace;
-  font-size: 0.8em;
-  display: inline-block;
-  padding-right: 10px;
-}
-.mem-cell {
-  font-family: "Lucida Console", Monaco, monospace;
-  font-size: 0.8em;
-  display: inline-block;
-  padding-right: 10px;
-}
-.mem-ptr {
-  font-family: "Lucida Console", Monaco, monospace;
-  font-size: 0.8em;
-  display: inline-block;
-}
 .mem-table.table-condensed > tbody > tr > td {
   border: none;
 }
-#reg-esp { background-color: #66FF66; }
-#reg-ebp { background-color: #FF9999; }
-#ptr-esp { background-color: #66FF66; }
-#ptr-ebp { background-color: #FF9999; }
+.text-muted {
+  color: #ddd;
+}
+#mem-stack {
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: 0.8em;
+  table-layout: fixed;
+  width: 100%
+}
+.mem-frame { background-color: #DDF; }
+#reg-eip { color: rgb(29,203,203); }
+#reg-esp { color: #5C7; }
+.ptr-esp { background-color: #6F6; }
+.ptr-esp-delta { color: #4C4; }
+#reg-ebp { color: #F99; }
+.ptr-ebp { background-color: #F99; }
+.ptr-ebp-delta { color: #EAA; }
 
