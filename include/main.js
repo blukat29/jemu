@@ -9,11 +9,41 @@ var exe_text_end;
 var memory;
 var emulator;
 var regs = {};
+var flags = {};
 var run_id;
 
 var esp_pointer = '<span id="ptr-esp">esp</span>';
 var ebp_pointer = ' <span id="ptr-ebp">ebp</span>';
 
+/*
+ * Helpers:
+ *    int_to_hexstr
+ *    byte_to_hexstr
+ *    get_source_code
+ *    get_instruction_at
+ *
+ * Display:
+ *    update_regs
+ *    show_stack
+ *    mark_current_instruction
+ *    update_context
+ *
+ * Mechanics:
+ *    assemble_error
+ *    run_pasm
+ *    compile_code
+ *    set_emulator_callbacks
+ *
+ * UI:
+ *    allow_edit_code
+ *    assemble_code
+ *    reset_emulator
+ *    step_emulator
+ *    run_emulator
+ *    pause_emulator
+ *    load_example
+ *    $(document).ready
+ */
 function int_to_hexstr(n) {
   var pad = "00000000";
   return "0x" + (pad + n.toString(16)).slice(-8);
@@ -26,8 +56,9 @@ function byte_to_hexstr(n) {
 }
 
 function get_source_code() {
-  source_code = editor.getValue('\n');
-  return source_code;
+  var raw = editor.getValue('\n');
+  source_code = raw.split('\n');
+  return raw;
 }
 
 function update_registers() {
@@ -43,13 +74,15 @@ function update_registers() {
   var real_eip = get_instruction_at(regs.eip.get()).addr;
   $("#reg-eip").html(int_to_hexstr(real_eip));
 
-  /* Display EFLAGS */
-  var flags = [["flagCarry","C"], ["flagZ","Z"], ["flagSign", "S"], ["flagOv", "O"]];
+  /* Display FLAGS */
+  var flag_names = [["flagCarry","C"], ["flagZ","Z"], ["flagSign", "S"], ["flagOv", "O"]];
   var flag_output = "";
-  for (var i=0; i<flags.length; i++) {
-    var original = flags[i][0];
-    var display = flags[i][1];
-    flag_output += "<b>" + display + "</b>:" + emulator.context[original] + " ";
+  for (var i=0; i<flag_names.length; i++) {
+    var original = flag_names[i][0];
+    var display = flag_names[i][1];
+    var value = emulator.context[original];
+    flag_output += "<b>" + display + "</b>:" + value + " ";
+    flags[display] = value;
   }
   $("#reg-flags").html(flag_output);
 }
@@ -112,10 +145,40 @@ function mark_current_instruction() {
   editor.addLineClass(index, "background", "current-instruction");
 }
 
+function show_branch_prediction() {
+  var e = $("#branch-prediction");
+  e.html("");
+  var inst = get_instruction_at(regs.eip.get());
+  var line = $.trim(source_code[inst.index]);
+  var opcode = line.split(' ')[0].toLowerCase();
+  if (opcode[0] === 'j') {
+    var cf=flags.C, zf=flags.Z, sf=flags.S, of=flags.O;
+    var taken;
+    switch (opcode.substr(1)) {
+      case 's':  taken = (sf==1); break;
+      case 'ns': taken = (sf==0); break;
+      case 'z':  taken = (zf==1); break;
+      case 'nz': taken = (zf==0); break;
+      case 'b':  taken = (cf==1); break;
+      case 'be': taken = (cf==1 || zf==1); break;
+      case 'a':  taken = (cf==0 && zf==0); break;
+      case 'l':  taken = (sf!=of); break;
+      case 'ge': taken = (sf==of); break;
+      case 'le': taken = (zf==1 || sf!=of); break;
+      case 'g':  taken = (zf==0 && sf==of); break;
+      case 'mp': taken = true; break;
+      default: e.html("???"); return;
+    }
+    if (taken) e.html("jmp TAKEN");
+    else e.html("jmp NOT TAKEN");
+  }
+}
+
 function update_context() {
   update_registers();
   show_stack();
   mark_current_instruction();
+  show_branch_prediction();
 }
 
 function assemble_error(msg, line) {
