@@ -181,10 +181,6 @@ function update_context() {
   show_branch_prediction();
 }
 
-function assemble_error(msg, line) {
-  console.log('Assemble error: ' + msg + ' in line ' + line);
-}
-
 function run_pasm() {
   var code = get_source_code();
 
@@ -255,30 +251,36 @@ function compile_code() {
 function allow_edit_code() {
   editor.setOption("readOnly", false);
   $(".CodeMirror-code").css("background-color", "#ffffff");
-  $("#btn-assemble").removeClass("disabled");
-  $("#btn-reset").addClass("disabled");
+  $("#btn-assemble").removeClass("disabled").addClass("btn-primary");
+  $("#btn-reset").addClass("disabled").removeClass("btn-primary");
   $("#btn-step").addClass("disabled");
   $("#btn-run").addClass("disabled");
   $("#btn-pause").addClass("disabled");
+  if (last_instruction != null)
+    editor.removeLineClass(last_instruction, "background", "current-instruction");
+  editor.clearGutter("text-address");
 }
 
 function assemble_code() {
   run_pasm();
   editor.setOption("readOnly", true);
   $(".CodeMirror-code").css("background-color", "#f5f5f5");
-  $("#btn-edit").removeClass("disabled")
-  $("#btn-assemble").removeClass("disabled");
-  $("#btn-reset").removeClass("disabled");
+  $("#btn-assemble").addClass("disabled").removeClass("btn-primary");
+  $("#btn-reset").removeClass("disabled").addClass("btn-primary");
   $("#btn-step").addClass("disabled");
   $("#btn-run").addClass("disabled");
+  if (last_instruction != null)
+    editor.removeLineClass(last_instruction, "background", "current-instruction");
 }
 
 function reset_emulator() {
-  compile_code();
   emulator.reset();
+  compile_code();
   update_context();
-  $("#btn-step").removeClass("disabled");
-  $("#btn-run").removeClass("disabled");
+  clearInterval(run_id);
+  $("#btn-assemble").removeClass("btn-primary").addClass("disabled");
+  $("#btn-step").removeClass("disabled").addClass("btn-primary");
+  $("#btn-run").removeClass("disabled").addClass("btn-success");
 }
 
 function step_emulator() {
@@ -287,9 +289,8 @@ function step_emulator() {
 }
 
 function run_emulator() {
-  run_id = setInterval(step_emulator, 100);
+  run_id = setInterval(step_emulator, 50);
   $("#btn-assemble").addClass("disabled");
-  $("#btn-reset").addClass("disabled");
   $("#btn-step").addClass("disabled");
   $("#btn-run").addClass("disabled");
   $("#btn-pause").removeClass("disabled");
@@ -329,6 +330,9 @@ $(document).ready(function() {
     lineNumbers: true
   });
 
+  function assemble_error(msg, line) {
+    console.log('Assemble error: ' + msg + ' in line ' + line);
+  }
   window.Opcode.error = assemble_error;
   pasm.parseError = assemble_error;
 
@@ -342,6 +346,6 @@ $(document).ready(function() {
   $("#btn-step").click(step_emulator);
   $("#btn-run").click(run_emulator);
   $("#btn-pause").click(pause_emulator);
-  $("#btn-example").click(load_example);
+  $("#select-example").change(load_example);
 });
 
