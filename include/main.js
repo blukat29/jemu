@@ -8,7 +8,8 @@ var exe_text;
 var exe_text_end;
 var memory;
 var emulator;
-var regs = {};
+var regs = null;
+var old_regs = null;
 var flags = {};
 var run_id;
 
@@ -23,7 +24,7 @@ var ebp_pointer = ' <span id="ptr-ebp">ebp</span>';
  *    get_instruction_at
  *
  * Display:
- *    update_regs
+ *    update_registers
  *    show_stack
  *    mark_current_instruction
  *    update_context
@@ -61,28 +62,50 @@ function get_source_code() {
   return raw;
 }
 
-function update_registers() {
-  regs = emulator.registers;
-  /* Display general purpose registers */
-  var names = ["eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp"];
+function get_registers() {
+  var result = {};
+  var raw = emulator.registers;
+
+  var names = ["eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp", "eip"];
   for (var i=0; i<names.length; i++) {
     var name = names[i];
-    $("#reg-" + name).html(int_to_hexstr(regs[name].get()));
+    result[name] = raw[name].get();
   }
-
-  /* Display real EIP */
-  var real_eip = get_instruction_at(regs.eip.get()).addr;
-  $("#reg-eip").html(int_to_hexstr(real_eip));
-
-  /* Display FLAGS */
   var flag_names = [["flagCarry","C"], ["flagZ","Z"], ["flagSign", "S"], ["flagOv", "O"]];
-  var flag_output = "";
   for (var i=0; i<flag_names.length; i++) {
     var original = flag_names[i][0];
     var display = flag_names[i][1];
     var value = emulator.context[original];
-    flag_output += "<b>" + display + "</b>:" + value + " ";
-    flags[display] = value;
+    result[display] = value;
+  }
+  return result;
+}
+
+function update_registers() {
+  old_regs = regs || get_registers();
+  regs = get_registers();
+
+  /* Display general purpose registers */
+  var names = ["eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp"];
+  for (var i=0; i<names.length; i++) {
+    var name = names[i];
+    var inner = int_to_hexstr(regs[name]);
+    var style = (old_regs[name] == regs[name])? "same" : "differ";
+      $("#reg-" + name).html('<span class="' + style + '">' + inner + '</span>');
+  }
+
+  /* Display real EIP */
+  var real_eip = get_instruction_at(regs.eip).addr;
+  $("#reg-eip").html(int_to_hexstr(real_eip));
+
+  /* Display FLAGS */
+  var flag_names = ["C", "Z", "S", "O"];
+  var flag_output = "";
+  for (var i=0; i<flag_names.length; i++) {
+    var name = flag_names[i];
+    var value = regs[name];
+    flag_output += "<b>" + name + "</b>:" + value + " ";
+    flags[name] = value;
   }
   $("#reg-flags").html(flag_output);
 }
@@ -99,8 +122,8 @@ function show_stack() {
   var base = 0xc0000000 - 0x80;
   var limit = 0xc0000000;
   var e = $("#mem-stack");
-  var sp = regs.esp.get();
-  var bp = regs.ebp.get();
+  var sp = regs.esp;
+  var bp = regs.ebp;
   e.html("");
   for (var addr = limit - 4; addr >= base; addr -= 4) {
 
@@ -140,7 +163,7 @@ function show_stack() {
 function mark_current_instruction() {
   if (last_instruction != null)
     editor.removeLineClass(last_instruction, "background", "current-instruction");
-  var index = get_instruction_at(regs.eip.get()).index;
+  var index = get_instruction_at(regs.eip).index;
   last_instruction = index;
   editor.addLineClass(index, "background", "current-instruction");
 }
@@ -148,7 +171,7 @@ function mark_current_instruction() {
 function show_branch_prediction() {
   var e = $("#branch-prediction");
   e.html("");
-  var inst = get_instruction_at(regs.eip.get());
+  var inst = get_instruction_at(regs.eip);
   var line = $.trim(source_code[inst.index]);
   var opcode = line.split(' ')[0].toLowerCase();
   if (opcode[0] === 'j') {
@@ -253,8 +276,8 @@ function allow_edit_code() {
   $(".CodeMirror-code").css("background-color", "#ffffff");
   $("#btn-assemble").removeClass("disabled").addClass("btn-primary");
   $("#btn-reset").addClass("disabled").removeClass("btn-primary");
-  $("#btn-step").addClass("disabled");
-  $("#btn-run").addClass("disabled");
+  $("#btn-step").addClass("disabled").removeClass("btn-primary");
+  $("#btn-run").addClass("disabled").removeClass("btn-success");
   $("#btn-pause").addClass("disabled");
   if (last_instruction != null)
     editor.removeLineClass(last_instruction, "background", "current-instruction");
@@ -267,15 +290,21 @@ function assemble_code() {
   $(".CodeMirror-code").css("background-color", "#f5f5f5");
   $("#btn-assemble").addClass("disabled").removeClass("btn-primary");
   $("#btn-reset").removeClass("disabled").addClass("btn-primary");
-  $("#btn-step").addClass("disabled");
-  $("#btn-run").addClass("disabled");
+  $("#btn-step").addClass("disabled").removeClass("btn-primary");
+  $("#btn-run").addClass("disabled").removeClass("btn-success");
   if (last_instruction != null)
     editor.removeLineClass(last_instruction, "background", "current-instruction");
 }
 
 function reset_emulator() {
-  emulator.reset();
-  compile_code();
+  if (emulator.isCompiled()) {
+    emulator.reset();
+    compile_code();
+  }
+  else {
+    compile_code();
+    emulator.reset();
+  }
   update_context();
   clearInterval(run_id);
   $("#btn-assemble").removeClass("btn-primary").addClass("disabled");

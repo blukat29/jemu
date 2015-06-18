@@ -15,9 +15,6 @@
   padding-left: 0.5em;
   font-size: 0.8em;
 }
-.current-instruction {
-  background-color: cyan;
-}
 .mem-table.table-condensed > tbody > tr > td {
   border: none;
 }
@@ -30,12 +27,20 @@
   table-layout: fixed;
   width: 100%
 }
+
 .mem-frame { background-color: #DDF; }
-#reg-eip { color: rgb(29,203,203); }
-#reg-esp { color: #5C7; }
+
+.current-instruction { background-color: cyan; }
+#reg-eip { background-color: cyan; }
+
+#reg-esp { background-color: #AEA }
 .ptr-esp { background-color: #6F6; }
 .ptr-esp-delta { color: #4C4; }
-#reg-ebp { color: #F99; }
+
+#reg-ebp { background-color: #EAA; }
 .ptr-ebp { background-color: #F99; }
 .ptr-ebp-delta { color: #EAA; }
+
+.same { color: black; }
+.differ { color: red; }
 
