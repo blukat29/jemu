@@ -8,12 +8,43 @@ var exe_text;
 var exe_text_end;
 var memory;
 var emulator;
-var regs = {};
+var regs = null;
+var old_regs = null;
+var flags = {};
 var run_id;
 
 var esp_pointer = '<span id="ptr-esp">esp</span>';
 var ebp_pointer = ' <span id="ptr-ebp">ebp</span>';
 
+/*
+ * Helpers:
+ *    int_to_hexstr
+ *    byte_to_hexstr
+ *    get_source_code
+ *    get_instruction_at
+ *
+ * Display:
+ *    update_registers
+ *    show_stack
+ *    mark_current_instruction
+ *    update_context
+ *
+ * Mechanics:
+ *    assemble_error
+ *    run_pasm
+ *    compile_code
+ *    set_emulator_callbacks
+ *
+ * UI:
+ *    allow_edit_code
+ *    assemble_code
+ *    reset_emulator
+ *    step_emulator
+ *    run_emulator
+ *    pause_emulator
+ *    load_example
+ *    $(document).ready
+ */
 function int_to_hexstr(n) {
   var pad = "00000000";
   return "0x" + (pad + n.toString(16)).slice(-8);
@@ -26,43 +57,57 @@ function byte_to_hexstr(n) {
 }
 
 function get_source_code() {
-  source_code = editor.getValue('\n');
-  return source_code;
+  var raw = editor.getValue('\n');
+  source_code = raw.split('\n');
+  return raw;
+}
+
+function get_registers() {
+  var result = {};
+  var raw = emulator.registers;
+
+  var names = ["eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp", "eip"];
+  for (var i=0; i<names.length; i++) {
+    var name = names[i];
+    result[name] = raw[name].get();
+  }
+  var flag_names = [["flagCarry","C"], ["flagZ","Z"], ["flagSign", "S"], ["flagOv", "O"]];
+  for (var i=0; i<flag_names.length; i++) {
+    var original = flag_names[i][0];
+    var display = flag_names[i][1];
+    var value = emulator.context[original];
+    result[display] = value;
+  }
+  return result;
 }
 
 function update_registers() {
-  regs = emulator.registers;
+  old_regs = regs || get_registers();
+  regs = get_registers();
+
   /* Display general purpose registers */
   var names = ["eax", "ebx", "ecx", "edx", "esi", "edi", "esp", "ebp"];
   for (var i=0; i<names.length; i++) {
     var name = names[i];
-    $("#reg-" + name).html(int_to_hexstr(regs[name].get()));
+    var inner = int_to_hexstr(regs[name]);
+    var style = (old_regs[name] == regs[name])? "same" : "differ";
+      $("#reg-" + name).html('<span class="' + style + '">' + inner + '</span>');
   }
 
   /* Display real EIP */
-  var real_eip = get_instruction_at(regs.eip.get()).addr;
+  var real_eip = get_instruction_at(regs.eip).addr;
   $("#reg-eip").html(int_to_hexstr(real_eip));
 
-  /* Display EFLAGS */
-  var flags = [["flagCarry","C"], ["flagZ","Z"], ["flagSign", "S"], ["flagOv", "O"]];
+  /* Display FLAGS */
+  var flag_names = ["C", "Z", "S", "O"];
   var flag_output = "";
-  for (var i=0; i<flags.length; i++) {
-    var original = flags[i][0];
-    var display = flags[i][1];
-    flag_output += "<b>" + display + "</b>:" + emulator.context[original] + " ";
+  for (var i=0; i<flag_names.length; i++) {
+    var name = flag_names[i];
+    var value = regs[name];
+    flag_output += "<b>" + name + "</b>:" + value + " ";
+    flags[name] = value;
   }
   $("#reg-flags").html(flag_output);
-}
-
-function memory_pointer(addr) {
-  var result = "";
-  var sp = regs.esp.get();
-  var bp = regs.ebp.get();
-  if (sp <= addr && addr < sp + 4) result += esp_pointer;
-  if (bp <= addr && addr < bp + 4) result += ebp_pointer;
-  if (sp + 4 <= addr && addr < bp)
-    return null;
-  return result;
 }
 
 function get_instruction_at(addr) {
@@ -77,17 +122,40 @@ function show_stack() {
   var base = 0xc0000000 - 0x80;
   var limit = 0xc0000000;
   var e = $("#mem-stack");
+  var sp = regs.esp;
+  var bp = regs.ebp;
   e.html("");
   for (var addr = limit - 4; addr >= base; addr -= 4) {
+
     var value = memory.get(addr, 4);
     var instr = get_instruction_at(value);
     if (instr)
       value = instr.addr;
-    var head = $('<div class="mem-head"></div>').html(int_to_hexstr(addr));
-    var cell = $('<div class="mem-cell"></div>').html(int_to_hexstr(value));
-    var ptr = $('<div class="mem-ptr"></div>').html(memory_pointer(addr) || "&nbsp;");
-    var tr = $('<div></div>');
-    tr.append(head).append(cell).append(ptr);
+
+    var head = $('<td class="mem-head"></td>').html(int_to_hexstr(addr));
+    var cell = $('<td class="mem-cell"></td>').html(int_to_hexstr(value));
+    if (sp <= addr && addr < bp + 4) {
+      head.addClass("mem-frame");
+      cell.addClass("mem-frame");
+    }
+
+    var sp_ptr = '<td></td>'
+    var bp_ptr = '<td></td>'
+    if (sp <= addr && addr < sp + 4)
+      sp_ptr = '<td class="mem-ptr ptr-esp">esp</td>';
+    else if (sp + 4 <= addr && addr <= bp)
+      sp_ptr = '<td class="mem-ptr ptr-esp-delta">esp+0x' + (addr - sp).toString(16) + '</td>';
+
+    if (bp <= addr && addr < bp + 4)
+      bp_ptr = '<td class="mem-ptr ptr-ebp">ebp</td>';
+    else if (sp <= addr && addr < bp)
+      bp_ptr = '<td class="mem-ptr ptr-ebp-delta">ebp-0x' + (bp - addr).toString(16) + '</td>';
+    else if (bp + 4 <= addr && addr < bp + 16)
+      bp_ptr = '<td class="mem-ptr ptr-ebp-delta">ebp+0x' + (addr - bp).toString(16) + '</td>';
+
+    var tr = $('<tr></tr>');
+    if (addr < sp) tr.addClass('text-muted');
+    tr.append(head).append(cell).append(sp_ptr).append(bp_ptr);
     e.append(tr);
   }
 }
@@ -95,19 +163,45 @@ function show_stack() {
 function mark_current_instruction() {
   if (last_instruction != null)
     editor.removeLineClass(last_instruction, "background", "current-instruction");
-  var index = get_instruction_at(regs.eip.get()).index;
+  var index = get_instruction_at(regs.eip).index;
   last_instruction = index;
   editor.addLineClass(index, "background", "current-instruction");
+}
+
+function show_branch_prediction() {
+  var e = $("#branch-prediction");
+  e.html("");
+  var inst = get_instruction_at(regs.eip);
+  var line = $.trim(source_code[inst.index]);
+  var opcode = line.split(' ')[0].toLowerCase();
+  if (opcode[0] === 'j') {
+    var cf=flags.C, zf=flags.Z, sf=flags.S, of=flags.O;
+    var taken;
+    switch (opcode.substr(1)) {
+      case 's':  taken = (sf==1); break;
+      case 'ns': taken = (sf==0); break;
+      case 'z':  taken = (zf==1); break;
+      case 'nz': taken = (zf==0); break;
+      case 'b':  taken = (cf==1); break;
+      case 'be': taken = (cf==1 || zf==1); break;
+      case 'a':  taken = (cf==0 && zf==0); break;
+      case 'l':  taken = (sf!=of); break;
+      case 'ge': taken = (sf==of); break;
+      case 'le': taken = (zf==1 || sf!=of); break;
+      case 'g':  taken = (zf==0 && sf==of); break;
+      case 'mp': taken = true; break;
+      default: e.html("???"); return;
+    }
+    if (taken) e.html("jmp TAKEN");
+    else e.html("jmp NOT TAKEN");
+  }
 }
 
 function update_context() {
   update_registers();
   show_stack();
   mark_current_instruction();
-}
-
-function assemble_error(msg, line) {
-  console.log('Assemble error: ' + msg + ' in line ' + line);
+  show_branch_prediction();
 }
 
 function run_pasm() {
@@ -180,29 +274,42 @@ function compile_code() {
 function allow_edit_code() {
   editor.setOption("readOnly", false);
   $(".CodeMirror-code").css("background-color", "#ffffff");
-  $("#btn-assemble").removeClass("disabled");
-  $("#btn-reset").addClass("disabled");
-  $("#btn-step").addClass("disabled");
-  $("#btn-run").addClass("disabled");
+  $("#btn-assemble").removeClass("disabled").addClass("btn-primary");
+  $("#btn-reset").addClass("disabled").removeClass("btn-primary");
+  $("#btn-step").addClass("disabled").removeClass("btn-primary");
+  $("#btn-run").addClass("disabled").removeClass("btn-success");
+  $("#btn-pause").addClass("disabled");
+  if (last_instruction != null)
+    editor.removeLineClass(last_instruction, "background", "current-instruction");
+  editor.clearGutter("text-address");
 }
 
 function assemble_code() {
   run_pasm();
   editor.setOption("readOnly", true);
   $(".CodeMirror-code").css("background-color", "#f5f5f5");
-  $("#btn-edit").removeClass("disabled")
-  $("#btn-assemble").removeClass("disabled");
-  $("#btn-reset").removeClass("disabled");
-  $("#btn-step").addClass("disabled");
-  $("#btn-run").addClass("disabled");
+  $("#btn-assemble").addClass("disabled").removeClass("btn-primary");
+  $("#btn-reset").removeClass("disabled").addClass("btn-primary");
+  $("#btn-step").addClass("disabled").removeClass("btn-primary");
+  $("#btn-run").addClass("disabled").removeClass("btn-success");
+  if (last_instruction != null)
+    editor.removeLineClass(last_instruction, "background", "current-instruction");
 }
 
 function reset_emulator() {
-  compile_code();
-  emulator.reset();
+  if (emulator.isCompiled()) {
+    emulator.reset();
+    compile_code();
+  }
+  else {
+    compile_code();
+    emulator.reset();
+  }
   update_context();
-  $("#btn-step").removeClass("disabled");
-  $("#btn-run").removeClass("disabled");
+  clearInterval(run_id);
+  $("#btn-assemble").removeClass("btn-primary").addClass("disabled");
+  $("#btn-step").removeClass("disabled").addClass("btn-primary");
+  $("#btn-run").removeClass("disabled").addClass("btn-success");
 }
 
 function step_emulator() {
@@ -211,9 +318,8 @@ function step_emulator() {
 }
 
 function run_emulator() {
-  run_id = setInterval(step_emulator, 100);
+  run_id = setInterval(step_emulator, 50);
   $("#btn-assemble").addClass("disabled");
-  $("#btn-reset").addClass("disabled");
   $("#btn-step").addClass("disabled");
   $("#btn-run").addClass("disabled");
   $("#btn-pause").removeClass("disabled");
@@ -241,6 +347,8 @@ function load_example() {
     url: "example/" + filename,
   }).done(function(data) {
     editor.setValue(data);
+    pause_emulator();
+    allow_edit_code();
   });
 }
 
@@ -251,6 +359,9 @@ $(document).ready(function() {
     lineNumbers: true
   });
 
+  function assemble_error(msg, line) {
+    console.log('Assemble error: ' + msg + ' in line ' + line);
+  }
   window.Opcode.error = assemble_error;
   pasm.parseError = assemble_error;
 
@@ -264,6 +375,6 @@ $(document).ready(function() {
   $("#btn-step").click(step_emulator);
   $("#btn-run").click(run_emulator);
   $("#btn-pause").click(pause_emulator);
-  $("#btn-example").click(load_example);
+  $("#select-example").change(load_example);
 });
 
