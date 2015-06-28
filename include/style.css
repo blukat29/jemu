@@ -15,9 +15,6 @@
   padding-left: 0.5em;
   font-size: 0.8em;
 }
-.mem-table.table-condensed > tbody > tr > td {
-  border: none;
-}
 .text-muted {
   color: #ddd;
 }
@@ -25,7 +22,11 @@
   font-family: "Lucida Console", Monaco, monospace;
   font-size: 0.8em;
   table-layout: fixed;
+  border-collapse: collapse;
   width: 100%
+}
+#mem-stack td {
+  border: 1px solid black;
 }
 
 .mem-frame { background-color: #DDF; }
