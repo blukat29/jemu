@@ -334,10 +334,15 @@ function pause_emulator() {
   $("#btn-pause").addClass("disabled");
 }
 
+function syscall_handler(ctx) {
+  console.log("syscall");
+}
+
 function set_emulator_callbacks() {
   emulator.onCompilationError.attach(function(emulator, msg, line, lineIdx, idx) {
     console.log("compile error " + msg + " at " + line);
   });
+  emulator.context.setSyscallHandler(syscall_handler);
 }
 
 function load_example() {
