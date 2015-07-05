@@ -338,10 +338,18 @@ function syscall_handler(ctx) {
   console.log("syscall");
 }
 
+function write_console(data) {
+  $("#console-out").append(data);
+}
+
 function set_emulator_callbacks() {
   emulator.onCompilationError.attach(function(emulator, msg, line, lineIdx, idx) {
-    console.log("compile error " + msg + " at " + line);
+    write_console('Assemble error: ' + msg + ' in line ' + line + '\n');
   });
+  emulator.onRuntimeError.attach(function(emulator, msg) {
+    write_console('Runtime error: ' + msg + '\n');
+  });
+  Asm86Language.translate(Asm86Language.enMessages, Asm86Language.enUI);
   emulator.context.setSyscallHandler(syscall_handler);
 }
 
@@ -357,6 +365,10 @@ function load_example() {
   });
 }
 
+function clear_console() {
+  $("#console-out").text('');
+}
+
 $(document).ready(function() {
 
   editor = CodeMirror.fromTextArea($("#source-code")[0], {
@@ -365,7 +377,7 @@ $(document).ready(function() {
   });
 
   function assemble_error(msg, line) {
-    console.log('Assemble error: ' + msg + ' in line ' + line);
+    write_console('Assemble error: ' + msg + ' in line ' + line + '\n');
   }
   window.Opcode.error = assemble_error;
   pasm.parseError = assemble_error;
@@ -381,5 +393,6 @@ $(document).ready(function() {
   $("#btn-run").click(run_emulator);
   $("#btn-pause").click(pause_emulator);
   $("#select-example").change(load_example);
+  $("#btn-clear").click(clear_console);
 });
 
