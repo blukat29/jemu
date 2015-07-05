@@ -1,23 +1,14 @@
-.title-inline {
-  display: inline-block;
-}
-.CodeMirror {
-  height: 100%;
-}
+body { padding-top: 70px; }
+.title-inline { display: inline-block; }
+.CodeMirror { height: 100%; }
 .code-display {
   font-size: small;
   font-family: "Lucida Console", Monaco, monospace;
 }
-.text-address {
-  width: 5.5em;
-}
-.text-address-gutter {
-  padding-left: 0.5em;
-  font-size: 0.8em;
-}
-.text-muted {
-  color: #ddd;
-}
+.text-address { width: 5.5em; }
+.text-address-gutter { padding-left: 0.5em; font-size: 0.8em; }
+.text-muted { color: #ddd; }
+
 #mem-stack {
   font-family: "Lucida Console", Monaco, monospace;
   font-size: 0.8em;
@@ -28,20 +19,15 @@
 #mem-stack td {
   border: 1px solid black;
 }
-
 .mem-frame { background-color: #DDF; }
-
 .current-instruction { background-color: cyan; }
 #reg-eip { background-color: cyan; }
-
 #reg-esp { background-color: #AEA }
 .ptr-esp { background-color: #6F6; }
 .ptr-esp-delta { color: #4C4; }
-
 #reg-ebp { background-color: #EAA; }
 .ptr-ebp { background-color: #F99; }
 .ptr-ebp-delta { color: #EAA; }
-
 .same { color: black; }
 .differ { color: red; }
 

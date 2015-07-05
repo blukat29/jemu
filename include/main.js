@@ -36,8 +36,6 @@ var ebp_pointer = ' <span id="ptr-ebp">ebp</span>';
  *    set_emulator_callbacks
  *
  * UI:
- *    allow_edit_code
- *    assemble_code
  *    reset_emulator
  *    step_emulator
  *    run_emulator
@@ -271,32 +269,9 @@ function compile_code() {
   emulator.compile(revised_code);
 }
 
-function allow_edit_code() {
-  editor.setOption("readOnly", false);
-  $(".CodeMirror-code").css("background-color", "#ffffff");
-  $("#btn-assemble").removeClass("disabled").addClass("btn-primary");
-  $("#btn-reset").addClass("disabled").removeClass("btn-primary");
-  $("#btn-step").addClass("disabled").removeClass("btn-primary");
-  $("#btn-run").addClass("disabled").removeClass("btn-success");
-  $("#btn-pause").addClass("disabled");
-  if (last_instruction != null)
-    editor.removeLineClass(last_instruction, "background", "current-instruction");
-  editor.clearGutter("text-address");
-}
-
-function assemble_code() {
-  run_pasm();
-  editor.setOption("readOnly", true);
-  $(".CodeMirror-code").css("background-color", "#f5f5f5");
-  $("#btn-assemble").addClass("disabled").removeClass("btn-primary");
-  $("#btn-reset").removeClass("disabled").addClass("btn-primary");
-  $("#btn-step").addClass("disabled").removeClass("btn-primary");
-  $("#btn-run").addClass("disabled").removeClass("btn-success");
-  if (last_instruction != null)
-    editor.removeLineClass(last_instruction, "background", "current-instruction");
-}
-
 function reset_emulator() {
+  pause_emulator();
+  run_pasm();
   if (emulator.isCompiled()) {
     emulator.reset();
     compile_code();
@@ -307,7 +282,6 @@ function reset_emulator() {
   }
   update_context();
   clearInterval(run_id);
-  $("#btn-assemble").removeClass("btn-primary").addClass("disabled");
   $("#btn-step").removeClass("disabled").addClass("btn-primary");
   $("#btn-run").removeClass("disabled").addClass("btn-success");
 }
@@ -315,11 +289,12 @@ function reset_emulator() {
 function step_emulator() {
   emulator.step();
   update_context();
+  if (emulator.isHalted())
+    clearInterval(run_id);
 }
 
 function run_emulator() {
   run_id = setInterval(step_emulator, 50);
-  $("#btn-assemble").addClass("disabled");
   $("#btn-step").addClass("disabled");
   $("#btn-run").addClass("disabled");
   $("#btn-pause").removeClass("disabled");
@@ -327,7 +302,6 @@ function run_emulator() {
 
 function pause_emulator() {
   clearInterval(run_id);
-  $("#btn-assemble").removeClass("disabled");
   $("#btn-reset").removeClass("disabled");
   $("#btn-step").removeClass("disabled");
   $("#btn-run").removeClass("disabled");
@@ -360,8 +334,7 @@ function load_example() {
     url: "example/" + filename,
   }).done(function(data) {
     editor.setValue(data);
-    pause_emulator();
-    allow_edit_code();
+    reset_emulator();
   });
 }
 
@@ -386,8 +359,6 @@ $(document).ready(function() {
   emulator = new Asm86Emulator(memory);
   set_emulator_callbacks();
 
-  $("#btn-edit").click(allow_edit_code);
-  $("#btn-assemble").click(assemble_code);
   $("#btn-reset").click(reset_emulator);
   $("#btn-step").click(step_emulator);
   $("#btn-run").click(run_emulator);
