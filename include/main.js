@@ -309,7 +309,26 @@ function pause_emulator() {
 }
 
 function syscall_handler(ctx) {
-  console.log("syscall");
+  var nr = ctx.regs.eax.get();
+  var b = ctx.regs.ebx.get();
+  var c = ctx.regs.ecx.get();
+  var d = ctx.regs.edx.get();
+
+  console.log(nr);
+  if (nr === 4) { // SYS_WRITE(ebx=fd, ecx=addr, edx=size)
+    if (b === 1) {
+      var s = "";
+      for (var i=0; i<d; i++)
+        s += String.fromCharCode(memory.get(c+i, 1));
+      write_console(s);
+      ctx.regs.eax.set(d);
+      return;
+    }
+    ctx.regs.eax.set(-1);
+    return;
+  }
+  ctx.regs.eax.set(-1);
+  return;
 }
 
 function write_console(data) {
