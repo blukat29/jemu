@@ -176,17 +176,17 @@ function show_branch_prediction() {
     var cf=flags.C, zf=flags.Z, sf=flags.S, of=flags.O;
     var taken;
     switch (opcode.substr(1)) {
-      case 's':  taken = (sf==1); break;
+      case 's' : taken = (sf==1); break;
       case 'ns': taken = (sf==0); break;
-      case 'z':  taken = (zf==1); break;
-      case 'nz': taken = (zf==0); break;
-      case 'b':  taken = (cf==1); break;
+      case 'e' : case 'z' : taken = (zf==1); break;
+      case 'ne': case 'nz': taken = (zf==0); break;
+      case 'c' : case 'b' :  taken = (cf==1); break;
       case 'be': taken = (cf==1 || zf==1); break;
-      case 'a':  taken = (cf==0 && zf==0); break;
-      case 'l':  taken = (sf!=of); break;
+      case 'a' : taken = (cf==0 && zf==0); break;
+      case 'l' : taken = (sf!=of); break;
       case 'ge': taken = (sf==of); break;
       case 'le': taken = (zf==1 || sf!=of); break;
-      case 'g':  taken = (zf==0 && sf==of); break;
+      case 'g' : taken = (zf==0 && sf==of); break;
       case 'mp': taken = true; break;
       default: e.html("???"); return;
     }
