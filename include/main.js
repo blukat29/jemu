@@ -12,6 +12,7 @@ var regs = null;
 var old_regs = null;
 var flags = {};
 var run_id;
+var console_idx = 0;
 
 var esp_pointer = '<span id="ptr-esp">esp</span>';
 var ebp_pointer = ' <span id="ptr-ebp">ebp</span>';
@@ -282,6 +283,7 @@ function reset_emulator() {
   }
   update_context();
   clearInterval(run_id);
+  console_idx = 0;
   $("#btn-step").removeClass("disabled").addClass("btn-primary");
   $("#btn-run").removeClass("disabled").addClass("btn-success");
 }
@@ -314,7 +316,18 @@ function syscall_handler(ctx) {
   var c = ctx.regs.ecx.get();
   var d = ctx.regs.edx.get();
 
-  console.log(nr);
+  if (nr === 3) { // SYS_READ(ebx=fd, ecx=addr, edx=size);
+    if (b === 0) {
+      var all = $("#console-in").val();
+      var data = all.substring(console_idx, console_idx+d);
+      for (var i=0; i<data.length; i++) {
+        memory.set(c+i, data[i].charCodeAt(0), 1);
+      }
+      console_idx += i;
+      ctx.regs.eax.set(i);
+      return;
+    }
+  }
   if (nr === 4) { // SYS_WRITE(ebx=fd, ecx=addr, edx=size)
     if (b === 1) {
       var s = "";
