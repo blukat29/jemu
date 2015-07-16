@@ -45,77 +45,54 @@
           </div>
           <div class="panel-body">
             <textarea rows="20" id="source-code" class="code-textarea">
-start:
-    push ebp
-    mov ebp, esp
-    push 2
-    push 1
-    call sum
-    hlt
-
-sum:
-    push ebp
-    mov ebp, esp
-    mov eax, [ebp+0x8]
-    mov ebx, [ebp+0xc]
-    add eax, ebx
-    mov esp, ebp
-    pop ebp
-    ret
             </textarea>
           </div>
         </div>
-      </div>
-      <div class="col-md-6">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h4 class="panel-title">Console</h4>
-              </div>
-              <div class="panel-body">
-                <textarea class="console" id="console-out" readonly></textarea>
-                <textarea class="console" id="console-in"></textarea>
-              </div>
-            </div>
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h4 class="panel-title">Console</h4>
           </div>
-          <div class="col-md-4">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h4 class="panel-title">Registers</h4>
-              </div>
-              <div class="panel-body">
-                <table class="table table-condensed" style="margin-bottom:0">
-                  <tbody>
-                    <tr><td><b>eax</b></td><td class="code-display" id="reg-eax">.</td></tr>
-                    <tr><td><b>ebx</b></td><td class="code-display" id="reg-ebx">.</td></tr>
-                    <tr><td><b>ecx</b></td><td class="code-display" id="reg-ecx">.</td></tr>
-                    <tr><td><b>edx</b></td><td class="code-display" id="reg-edx">.</td></tr>
-                    <tr><td><b>edi</b></td><td class="code-display" id="reg-edi">.</td></tr>
-                    <tr><td><b>esi</b></td><td class="code-display" id="reg-esi">.</td></tr>
-                    <tr><td><b>ebp</b></td><td class="code-display" id="reg-ebp">.</td></tr>
-                    <tr><td><b>esp</b></td><td class="code-display" id="reg-esp">.</td></tr>
-                    <tr><td><b>eip</b></td><td class="code-display" id="reg-eip">.</td></tr>
-                    <tr><td><b>flags</b></td><td class="code-display" id="reg-flags">.</td></tr>
-                    <tr><td colspan="2" class="code-display" id="branch-prediction"></td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-8">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h4 class="panel-title">Memory</h4>
-              </div>
-              <div class="panel-body">
-                <table id="mem-stack">
-                </table>
-              </div>
-            </div>
+          <div class="panel-body">
+            <textarea class="console" id="console-out" readonly></textarea>
+            <textarea class="console" id="console-in"></textarea>
           </div>
         </div>
       </div>
+        <div class="col-md-2">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h4 class="panel-title">Registers</h4>
+            </div>
+            <div class="panel-body">
+              <table class="table table-condensed" style="margin-bottom:0">
+                <tbody>
+                  <tr><td><b>eax</b></td><td class="code-display" id="reg-eax">.</td></tr>
+                  <tr><td><b>ebx</b></td><td class="code-display" id="reg-ebx">.</td></tr>
+                  <tr><td><b>ecx</b></td><td class="code-display" id="reg-ecx">.</td></tr>
+                  <tr><td><b>edx</b></td><td class="code-display" id="reg-edx">.</td></tr>
+                  <tr><td><b>edi</b></td><td class="code-display" id="reg-edi">.</td></tr>
+                  <tr><td><b>esi</b></td><td class="code-display" id="reg-esi">.</td></tr>
+                  <tr><td><b>ebp</b></td><td class="code-display" id="reg-ebp">.</td></tr>
+                  <tr><td><b>esp</b></td><td class="code-display" id="reg-esp">.</td></tr>
+                  <tr><td><b>eip</b></td><td class="code-display" id="reg-eip">.</td></tr>
+                  <tr><td><b>flags</b></td><td class="code-display" id="reg-flags">.</td></tr>
+                  <tr><td colspan="2" class="code-display" id="branch-prediction"></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h4 class="panel-title">Memory</h4>
+            </div>
+            <div class="panel-body">
+              <table id="mem-stack">
+              </table>
+            </div>
+          </div>
+        </div>
     </div>
   </div>
   <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
