@@ -128,6 +128,7 @@ function Asm86EmulatorContext(errorNotificationFunction, memory, inputFunction, 
 	this.nextInstruction = this.entryPoint;
 	this.errorOccurred = false;
 	this.instructions = [];
+	this.syscallHandler = null;
 	this.validateNextInstructionIndex = function () {
 		var idx = (this.nextInstruction - this.entryPoint) >>> 2;
 		if (idx < 0 || idx >= this.instructions.length) {
@@ -137,6 +138,12 @@ function Asm86EmulatorContext(errorNotificationFunction, memory, inputFunction, 
 		}
 		return true;
 	};
+	this.setSyscallHandler = function(handler) {
+		this.syscallHandler = handler;
+	};
+	this.handleSyscall = function() {
+		this.syscallHandler(this);
+	}
 	this.gotoInterruptHandler = function (interruptNumber) {
 		var addr = this.regs.esp.get(), v;
 		if ((v = this.getMem(this.idt + (interruptNumber << 2), 4)) !== null) {
@@ -2465,6 +2472,9 @@ Asm86Emulator.prototype.OP = {
 				ctx.halted = true;
 				ctx.dbgReq = true;
 				return undefined;
+			/* Special rule for handling Linux syscalls. */
+			} else if (v == 0x80) {
+				return ctx.handleSyscall();
 			} else {
 				return ctx.gotoInterruptHandler(v);
 			}
