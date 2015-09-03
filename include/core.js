@@ -12,10 +12,10 @@ function Jemu(console_in, console_out) {
 
   /* Set Asm86 callbacks */
   this.emulator.onCompilationError.attach(function(emulator, msg, line, lineIdx, idx) {
-    write_console('Assemble error: ' + msg + ' in line ' + line + '\n');
+    console_out('Assemble error: ' + msg + ' in line ' + line + '\n');
   });
   this.emulator.onRuntimeError.attach(function(emulator, msg) {
-    write_console('Runtime error: ' + msg + '\n');
+    console_out('Runtime error: ' + msg + '\n');
   });
   Asm86Language.translate(Asm86Language.enMessages, Asm86Language.enUI);
   this.emulator.context.setSyscallHandler(this.syscall_handler);
@@ -127,6 +127,7 @@ Jemu.prototype = {
   predictBranch: function(code_lines, regs) {
     var eip = this.emulator.registers.eip.get();
     var inst = this.getInstructionAt(eip);
+    if (!inst) return null;
     var line = $.trim(code_lines[inst.index]);
     var opcode = line.split(' ')[0].toLowerCase();
     if (opcode[0] === 'j') {
