@@ -36,8 +36,14 @@ function show_registers() {
   }
 
   /* Display real EIP */
-  var real_eip = jemu.getInstructionAt(regs.eip).addr;
-  $("#reg-eip").html(int_to_hexstr(real_eip));
+  var inst = jemu.getInstructionAt(regs.eip);
+  if (inst) {
+    var real_eip = jemu.getInstructionAt(regs.eip).addr;
+    $("#reg-eip").html(int_to_hexstr(real_eip));
+  }
+  else {
+    $("#reg-eip").html("????");
+  }
 
   /* Display FLAGS */
   var flag_names = ["C", "Z", "S", "O"];
@@ -106,9 +112,12 @@ function show_stack() {
 function show_current_instruction() {
   if (last_instruction != null)
     editor.removeLineClass(last_instruction, "background", "current-instruction");
-  var index = jemu.getInstructionAt(regs.eip).index;
-  last_instruction = index;
-  editor.addLineClass(index, "background", "current-instruction");
+  var inst = jemu.getInstructionAt(regs.eip);
+  if (inst) {
+    var index = inst.index;
+    last_instruction = index;
+    editor.addLineClass(index, "background", "current-instruction");
+  }
 }
 
 function update_context() {
